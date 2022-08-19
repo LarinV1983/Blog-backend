@@ -2,10 +2,13 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import {registerValidation} from './validations/auth.js';
+import {registerValidation, loginValidation} from './validations/authLogin.js';
+import {articlesValidation} from './validations/articles.js';
+
 import {validationResult} from 'express-validator';
 import UserModel from './models/User.js'; 
-import checkAuth from './checkAuth.js'; 
+import checkAuth from './checkAuth.js';
+import * as ArticlesController from './controller/ArticlesController.js'; 
 
 mongoose
 .connect('mongodb+srv://vandal:vvvvvv@cluster0.yfxbmvd.mongodb.net/blog?retryWrites=true&w=majority')
@@ -16,7 +19,7 @@ const app = express();
 
 app.use(express.json());
 
-app.post('/login', async (req, res) => {
+app.post('/login', loginValidation, async (req, res) => {
 	try {
 		const user = await UserModel.findOne({ email: req.body.email});
 		if (!user) {
@@ -55,13 +58,13 @@ app.post('/login', async (req, res) => {
 	}
 });
 
+
+// 
 app.post('/register', registerValidation, async (req, res) => {
 	try {
-	const errors = validationResult(req);
-	if (!errors.isEmpty()) {
-		return res.status(400).json(errors.array());
-	}
-
+	// const errors = validationResult(req);
+	// if (!errors.isEmpty()) {
+	// 	return res.status(400).json(errors.array());
 	const password = req.body.password;
 	const salt = await bcrypt.genSalt(10);
 	const hash = await bcrypt.hash(password, salt);
@@ -72,6 +75,18 @@ app.post('/register', registerValidation, async (req, res) => {
 		avatarUrl: req.body.avatarUrl,
 		passwordHash: hash,
 	});
+
+// 
+	// const password = req.body.password;
+	// const salt = await bcrypt.genSalt(10);
+	// const hash = await bcrypt.hash(password, salt);
+
+	// const doc =  new UserModel ({
+	// 	fullName: req.body.fullName,
+	// 	email: req.body.email,
+	// 	avatarUrl: req.body.avatarUrl,
+	// 	passwordHash: hash,
+	// });
 
 	const user = await doc.save();
 
@@ -99,6 +114,9 @@ app.post('/register', registerValidation, async (req, res) => {
 	}
 });
 
+
+
+// 
 app.get('/me', checkAuth, async (req, res) => {
 	try {
 		const user = await UserModel.findById(req.userId);
@@ -111,11 +129,18 @@ app.get('/me', checkAuth, async (req, res) => {
 
 	res.json(userData);
 	} catch(err) {
-		return res.status(500).join({
+		console.log(err);
+		return res.status(500).json({
 			message: 'НЕТ ДОСТУПА',
 		});
 	}
 });
+
+app.get('/article', ArticlesController.getAll);
+// app.get('/article:id', ArticlesController.getOne);
+app.post('/articles', checkAuth, articlesValidation, ArticlesController.create);
+// app.delete('/article', ArticlesController.remove);
+// app.patch('/article', ArticlesController.update);
 
 app.listen(7777, (err) => {
 	if (err) {
