@@ -126,7 +126,6 @@ app.get('/me', checkAuth, async (req, res) => {
 			});
 		}
 		const {passwordHash, ...userData } = user._doc;
-
 	res.json(userData);
 	} catch(err) {
 		console.log(err);
@@ -136,11 +135,11 @@ app.get('/me', checkAuth, async (req, res) => {
 	}
 });
 
-app.get('/article', ArticlesController.getAll);
-// app.get('/article:id', ArticlesController.getOne);
+app.get('/articles', ArticlesController.getAll);
+app.get('/articles:id', ArticlesController.getOne);
 app.post('/articles', checkAuth, articlesValidation, ArticlesController.create);
-// app.delete('/article', ArticlesController.remove);
-// app.patch('/article', ArticlesController.update);
+app.delete('/articles:id', checkAuth, ArticlesController.remove);
+app.patch('/articles:id',checkAuth, ArticlesController.update);
 
 app.listen(7777, (err) => {
 	if (err) {
