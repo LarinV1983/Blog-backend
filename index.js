@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
@@ -8,6 +9,7 @@ import {articlesValidation} from './validations/articles.js';
 import {validationResult} from 'express-validator';
 import UserModel from './models/User.js'; 
 import checkAuth from './checkAuth.js';
+import validationsError from './validationsError.js';
 import * as ArticlesController from './controller/ArticlesController.js'; 
 
 mongoose
@@ -17,9 +19,21 @@ mongoose
 
 const app = express();
 
-app.use(express.json());
+const storageImg = multer.diskStorage({
+	destination: (_, __, cb) => {
+		cb(null, 'uploads');
+	},
+	filename: (_, file, cb) => {
+		cb(null, file.originalname);
+	},
+});
 
-app.post('/login', loginValidation, async (req, res) => {
+const upload = multer({storageImg});
+
+app.use(express.json());
+app.use('/uploads', express.static('uploads'));
+
+app.post('/login', loginValidation, validationsError, async (req, res) => {
 	try {
 		const user = await UserModel.findOne({ email: req.body.email});
 		if (!user) {
@@ -60,7 +74,7 @@ app.post('/login', loginValidation, async (req, res) => {
 
 
 // 
-app.post('/register', registerValidation, async (req, res) => {
+app.post('/register', registerValidation, validationsError, async (req, res) => {
 	try {
 	// const errors = validationResult(req);
 	// if (!errors.isEmpty()) {
@@ -139,7 +153,13 @@ app.get('/articles', ArticlesController.getAll);
 app.get('/articles:id', ArticlesController.getOne);
 app.post('/articles', checkAuth, articlesValidation, ArticlesController.create);
 app.delete('/articles:id', checkAuth, ArticlesController.remove);
-app.patch('/articles:id',checkAuth, ArticlesController.update);
+app.patch('/articles:id', checkAuth, ArticlesController.update);
+
+app.post('/uploads', checkAuth, upload.single('image'), (req, res) =>{
+	res.json({
+		url: `/uploads${req.file.originalname}`,
+	});
+});
 
 app.listen(7777, (err) => {
 	if (err) {
