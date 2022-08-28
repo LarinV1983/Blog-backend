@@ -23,8 +23,8 @@ const ArticleSchema = new mongoose.Schema({
 		ref: 'User',
 		required: true,
 	},
-	imageUrl: String,
-},
+		imageUrl: String,
+	},
 	{
 	timestamps: true,
 	}, 

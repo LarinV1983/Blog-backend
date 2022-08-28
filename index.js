@@ -20,7 +20,7 @@ mongoose
 
 const app = express();
 
-const storageImg = multer.diskStorage({
+const storage = multer.diskStorage({
 	destination: (_, __, cb) => {
 		cb(null, 'uploads');
 	},
@@ -29,7 +29,7 @@ const storageImg = multer.diskStorage({
 	},
 });
 
-const upload = multer({storageImg});
+const upload = multer({storage});
 
 app.use(express.json());
 app.use(cors());
@@ -74,13 +74,9 @@ app.post('/login', loginValidation, validationsError, async (req, res) => {
 	}
 });
 
-
-// 
 app.post('/register', registerValidation, validationsError, async (req, res) => {
 	try {
-	// const errors = validationResult(req);
-	// if (!errors.isEmpty()) {
-	// 	return res.status(400).json(errors.array());
+	
 	const password = req.body.password;
 	const salt = await bcrypt.genSalt(10);
 	const hash = await bcrypt.hash(password, salt);
@@ -91,18 +87,6 @@ app.post('/register', registerValidation, validationsError, async (req, res) => 
 		avatarUrl: req.body.avatarUrl,
 		passwordHash: hash,
 	});
-
-// 
-	// const password = req.body.password;
-	// const salt = await bcrypt.genSalt(10);
-	// const hash = await bcrypt.hash(password, salt);
-
-	// const doc =  new UserModel ({
-	// 	fullName: req.body.fullName,
-	// 	email: req.body.email,
-	// 	avatarUrl: req.body.avatarUrl,
-	// 	passwordHash: hash,
-	// });
 
 	const user = await doc.save();
 
@@ -130,9 +114,6 @@ app.post('/register', registerValidation, validationsError, async (req, res) => 
 	}
 });
 
-
-
-// 
 app.get('/me', checkAuth, async (req, res) => {
 	try {
 		const user = await UserModel.findById(req.userId);
@@ -152,14 +133,16 @@ app.get('/me', checkAuth, async (req, res) => {
 });
 
 app.get('/articles', ArticlesController.getAll);
-app.get('/articles:id', ArticlesController.getOne);
+app.get('/tags', ArticlesController.getLastTags);
+app.get('/articles/tags', ArticlesController.getLastTags);
+app.get('/articles/:id', ArticlesController.getOne);
 app.post('/articles', checkAuth, articlesValidation, ArticlesController.create);
-app.delete('/articles:id', checkAuth, ArticlesController.remove);
-app.patch('/articles:id', checkAuth, ArticlesController.update);
+app.delete('/articles/:id', checkAuth, ArticlesController.remove);
+app.patch('/articles/:id', checkAuth, ArticlesController.update);
 
-app.post('/uploads', checkAuth, upload.single('image'), (req, res) =>{
+app.post('/upload', checkAuth, upload.single('image'), (req, res) =>{
 	res.json({
-		url: `/uploads${req.file.originalname}`,
+		url: `/uploads/${req.file.originalname}`,
 	});
 });
 
